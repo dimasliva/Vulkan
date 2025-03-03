@@ -37,11 +37,58 @@ int main() {
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-	VkPhysicalDeviceProperties physicalDevice;
-	for (const VkPhysicalDevice& device : devices)
+	VkPhysicalDevice physicalDevice = devices.data()[0];
+
+
+
+
+
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+	uint32_t graphicsQueueFamilyIndex = 0;
+	uint32_t presentQueueFamilyIndex = 0;
+
+	for (size_t i = 0; i < queueFamilies.size(); i++)
 	{
-		vkGetPhysicalDeviceProperties(device, &physicalDevice);
+		VkQueueFamilyProperties queueFamily = queueFamilies[i];
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			graphicsQueueFamilyIndex = i;
+			break;
+		}
+	
 	}
+
+
+	VkPhysicalDeviceFeatures deviceFeautres = {};
+
+
+	float queuePriority = 1.0f;
+
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	VkDeviceQueueCreateInfo queueCreateInfo = {};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	queueCreateInfos.push_back(queueCreateInfo);
+
+	VkDeviceCreateInfo deviceCreateInfo = {};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	deviceCreateInfo.enabledExtensionCount = 0;
+	deviceCreateInfo.pEnabledFeatures = &deviceFeautres;
+
+	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+	
+
+	VkDevice device;
+	vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
 
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
@@ -50,3 +97,4 @@ int main() {
 
 	return 1;
 }
+
