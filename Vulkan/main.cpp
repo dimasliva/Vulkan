@@ -1,5 +1,8 @@
+#define GLFW_INCLUDE_VULKAN
 #include<GLFW/glfw3.h>
-#include<vulkan/vulkan.h>
+#include<iostream>
+#include<vector>
+
 
 int main() {
 	glfwInit();
@@ -7,6 +10,10 @@ int main() {
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
+
+	uint32_t glfwExtensionCout = 0;
+	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCout);
+	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCout);
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -19,11 +26,13 @@ int main() {
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+	createInfo.ppEnabledExtensionNames = extensions.data();
 
 	VkInstance instance = {};
-
 	vkCreateInstance(&createInfo, nullptr, &instance);
+
+
 
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
