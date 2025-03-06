@@ -100,7 +100,12 @@ int main() {
 	VkDeviceCreateInfo deviceCreateInfo = {};
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-	deviceCreateInfo.enabledExtensionCount = 0;
+	const std::vector<const char*> deviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
+
+	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 	deviceCreateInfo.pEnabledFeatures = &deviceFeautres;
 
 	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -109,6 +114,71 @@ int main() {
 
 	VkDevice device;
 	vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
+
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+	std::vector<VkPresentModeKHR> presentModes(presentModeCount);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
+
+	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+	for (VkPresentModeKHR avalibleMode : presentModes)
+	{
+		if (avalibleMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			presentMode = avalibleMode;
+			break;
+		}
+	}
+
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+	std::vector<VkSurfaceFormatKHR> swapChainFormats(formatCount);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &presentModeCount, swapChainFormats.data());
+
+	VkSurfaceFormatKHR surfaceFormat = swapChainFormats.data()[0];
+	for (VkSurfaceFormatKHR avalibleFormat : swapChainFormats)
+	{
+		if (avalibleFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && avalibleFormat.format == VK_FORMAT_B8G8R8A8_SRGB) {
+			surfaceFormat = avalibleFormat;
+			break;
+		}
+	}
+
+	VkSurfaceCapabilitiesKHR capabilities;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
+	VkExtent2D extent = capabilities.currentExtent;
+	uint32_t imageCount = capabilities.minImageCount + 1;
+
+	VkSwapchainCreateInfoKHR swapChainCreateInfo{};
+	swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapChainCreateInfo.surface = surface;
+	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swapChainCreateInfo.clipped = VK_TRUE;
+	swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	swapChainCreateInfo.imageArrayLayers = 1;
+
+	uint32_t queueFamiliyIndices[] = { graphicsQueueFamilyIndex, presentQueueFamilyIndex };
+	if (graphicsQueueFamilyIndex != presentQueueFamilyIndex) {
+
+		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		swapChainCreateInfo.queueFamilyIndexCount = 2;
+		swapChainCreateInfo.pQueueFamilyIndices = queueFamiliyIndices;
+	}
+	else {
+		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	}
+
+
+
+	swapChainCreateInfo.presentMode = presentMode;
+	swapChainCreateInfo.imageExtent = extent;
+	swapChainCreateInfo.minImageCount = imageCount;
+	swapChainCreateInfo.preTransform = capabilities.currentTransform;
+	swapChainCreateInfo.imageFormat = surfaceFormat.format;
+	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
+
+	VkSwapchainKHR swapChain;
+	vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain);
 
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
