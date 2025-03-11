@@ -3,6 +3,29 @@
 #include<iostream>
 #include<vector>
 #include<set>
+#include<fstream>
+
+VkShaderModule createShaderModule(std::vector<char> code, VkDevice device) {
+	VkShaderModuleCreateInfo shaderModuleCreateInfo{};
+	shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	shaderModuleCreateInfo.codeSize = code.size();
+	shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+	VkShaderModule shaderModule;
+	vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &shaderModule);
+
+	return shaderModule;
+}
+
+std::vector<char> readFile(std::string filename) {
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+	size_t fileSize = static_cast<size_t>(file.tellg());
+	std::vector<char> buffer(fileSize);
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+	file.close();
+	return buffer;
+}
 
 
 int main() {
@@ -236,6 +259,12 @@ int main() {
 
 	VkRenderPass renderPass;
 	vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass);
+
+	std::vector<char> vertShaderCode = readFile("shaders/vert.spv");
+	std::vector<char> fragShaderCode = readFile("shaders/frag.spv");
+	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, device);
+	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, device);
+
 
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
