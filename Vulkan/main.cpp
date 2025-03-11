@@ -208,6 +208,34 @@ int main() {
 		vkCreateImageView(device, &imageViewCreateInfo, nullptr, &swapChainImageViews[i]);
 	}
 
+	VkAttachmentDescription colorAttachmentDescription{};
+	colorAttachmentDescription.format = swapChainImageFormat;
+	colorAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentReference colorAttachmentReference{};
+	colorAttachmentReference.attachment = 0;
+	colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	
+	VkSubpassDescription subpassDescription{};
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorAttachmentReference;
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+	VkRenderPassCreateInfo renderPassCreateInfo{};
+	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassCreateInfo.attachmentCount = 1;
+	renderPassCreateInfo.pAttachments = &colorAttachmentDescription;
+	renderPassCreateInfo.subpassCount = 1;
+	renderPassCreateInfo.pSubpasses = &subpassDescription;
+
+	VkRenderPass renderPass;
+	vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &renderPass);
 
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
