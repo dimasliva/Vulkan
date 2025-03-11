@@ -265,6 +265,28 @@ int main() {
 	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, device);
 	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, device);
 
+	VkPipelineShaderStageCreateInfo vertPipelineShaderStageCreateInfo{};
+	vertPipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertPipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertPipelineShaderStageCreateInfo.module = vertShaderModule;
+	vertPipelineShaderStageCreateInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragPipelineShaderStageCreateInfo{};
+	vertPipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertPipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	vertPipelineShaderStageCreateInfo.module = fragShaderModule;
+	vertPipelineShaderStageCreateInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertPipelineShaderStageCreateInfo, fragPipelineShaderStageCreateInfo };
+
+	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
+	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	graphicsPipelineCreateInfo.stageCount = 2;
+	graphicsPipelineCreateInfo.pStages = shaderStages;
+
+
+	VkPipeline graphicPipeline;
+	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &graphicPipeline);
 
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
