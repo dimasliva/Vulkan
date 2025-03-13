@@ -272,10 +272,10 @@ int main() {
 	vertPipelineShaderStageCreateInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo fragPipelineShaderStageCreateInfo{};
-	vertPipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertPipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	vertPipelineShaderStageCreateInfo.module = fragShaderModule;
-	vertPipelineShaderStageCreateInfo.pName = "main";
+	fragPipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragPipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragPipelineShaderStageCreateInfo.module = fragShaderModule;
+	fragPipelineShaderStageCreateInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertPipelineShaderStageCreateInfo, fragPipelineShaderStageCreateInfo };
 
@@ -304,6 +304,39 @@ int main() {
 	pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 	pipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
+	VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo{};
+	pipelineMultisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	pipelineMultisampleStateCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	pipelineMultisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
+
+	VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState{};
+	pipelineColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT ;
+	pipelineColorBlendAttachmentState.blendEnable = VK_FALSE;
+
+	VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo{};
+	pipelineColorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	pipelineColorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
+	pipelineColorBlendStateCreateInfo.attachmentCount = 1;
+	pipelineColorBlendStateCreateInfo.pAttachments = &pipelineColorBlendAttachmentState;
+
+	std::vector<VkDynamicState> dynamicStates = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR,
+	};
+
+	VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
+	pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	pipelineDynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	pipelineDynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
+
+	VkPipelineLayout pipelineLayout;
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCreateInfo.setLayoutCount = 0;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+
+	vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
+
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	graphicsPipelineCreateInfo.stageCount = 2;
@@ -312,6 +345,13 @@ int main() {
 	graphicsPipelineCreateInfo.pInputAssemblyState = &pipelineInputAssemblyStateCreateInfo;
 	graphicsPipelineCreateInfo.pViewportState = &pipelineViewportStateCreateInfo;
 	graphicsPipelineCreateInfo.pRasterizationState = &pipelineRasterizationStateCreateInfo;
+	graphicsPipelineCreateInfo.pMultisampleState = &pipelineMultisampleStateCreateInfo;
+	graphicsPipelineCreateInfo.pColorBlendState = &pipelineColorBlendStateCreateInfo;
+	graphicsPipelineCreateInfo.pDynamicState = &pipelineDynamicStateCreateInfo;
+	graphicsPipelineCreateInfo.layout = pipelineLayout;
+	graphicsPipelineCreateInfo.renderPass = renderPass;
+	graphicsPipelineCreateInfo.subpass = 0;
+	graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 
 
 	VkPipeline graphicPipeline;
