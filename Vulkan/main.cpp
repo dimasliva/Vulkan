@@ -289,12 +289,29 @@ int main() {
 	pipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
+	VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo{};
+	pipelineViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	pipelineViewportStateCreateInfo.viewportCount = 1;
+	pipelineViewportStateCreateInfo.scissorCount = 1;
+
+	VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo{};
+	pipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
+	pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+	pipelineRasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
+	pipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+	pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
+	pipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	pipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	graphicsPipelineCreateInfo.stageCount = 2;
 	graphicsPipelineCreateInfo.pStages = shaderStages;
 	graphicsPipelineCreateInfo.pVertexInputState = &pipelineVertexInputStateCreateInfo;
 	graphicsPipelineCreateInfo.pInputAssemblyState = &pipelineInputAssemblyStateCreateInfo;
+	graphicsPipelineCreateInfo.pViewportState = &pipelineViewportStateCreateInfo;
+	graphicsPipelineCreateInfo.pRasterizationState = &pipelineRasterizationStateCreateInfo;
 
 
 	VkPipeline graphicPipeline;
