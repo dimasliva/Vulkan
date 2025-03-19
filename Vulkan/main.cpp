@@ -377,6 +377,23 @@ int main() {
 		vkCreateFramebuffer(device, &framebufferCreateInfo, nullptr, &swapChainFramebuffers[i]);
 	}
 
+	VkCommandPool commandPool;
+	VkCommandPoolCreateInfo commandPoolCreateInfo{};
+	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	commandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+	vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool);
+
+	const int MAX_FRAMES_IN_FLIGHT = 2;
+	std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
+
+	VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	commandBufferAllocateInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+	commandBufferAllocateInfo.commandPool = commandPool;
+	commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data());
 
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
