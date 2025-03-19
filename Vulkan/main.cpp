@@ -395,6 +395,23 @@ int main() {
 
 	vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffers.data());
 
+	std::vector<VkSemaphore> imageAvalibleSemaphores(MAX_FRAMES_IN_FLIGHT);
+	std::vector<VkSemaphore> renderFinishedSemaphores(MAX_FRAMES_IN_FLIGHT);
+	std::vector<VkFence> inFlightFences(MAX_FRAMES_IN_FLIGHT);
+
+	VkSemaphoreCreateInfo semaphoreCreateInfo{};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceCreateInfo{};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvalibleSemaphores[i]);
+		vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]);
+		vkCreateFence(device, &fenceCreateInfo, nullptr, &inFlightFences[i]);
+	}
+
+
 	while (glfwWindowShouldClose(window) == false) {
 		glfwPollEvents();
 	}
