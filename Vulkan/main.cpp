@@ -479,6 +479,8 @@ int main() {
 
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		VkSemaphore waitSemaphores[] = { imageAvalibleSemaphores[currentFrame]};
+		VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+		VkSwapchainKHR swapChains[] = { swapChain };
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -487,9 +489,21 @@ int main() {
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
 
 		vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+		
 
+		VkPresentInfoKHR presentInfoKHR{};
+		presentInfoKHR.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfoKHR.swapchainCount = 1;
+		presentInfoKHR.pWaitSemaphores = signalSemaphores;
+		presentInfoKHR.swapchainCount = 1;
+		presentInfoKHR.pSwapchains = swapChains;
+		presentInfoKHR.pImageIndices = &imageIndex;
+
+		vkQueuePresentKHR(presentQueue, &presentInfoKHR);
 
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
