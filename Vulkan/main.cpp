@@ -44,12 +44,22 @@ private:
 	uint32_t currentFrame = 0;
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
+	bool framebufferResized = false;
+
 	void initWindow() {
 		glfwInit();
 
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		window = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
+
+		glfwSetWindowUserPointer(window, this);
+		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+	}
+
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int heigh) {
+		Application* app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+		app->framebufferResized = true;
 	}
 
 	void initVulkan() {
@@ -71,9 +81,8 @@ private:
 		while (glfwWindowShouldClose(window) == false) {
 			glfwPollEvents();
 			drawFrame();
-		
 		}
-
+		vkDeviceWaitIdle(device);
 	}
 
 	void createInstance() {
@@ -328,8 +337,8 @@ private:
 
 		std::vector<char> vertShaderCode = readFile("shaders/vert.spv");
 		std::vector<char> fragShaderCode = readFile("shaders/frag.spv");
-		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, device);
-		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, device);
+		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
 		VkPipelineShaderStageCreateInfo vertPipelineShaderStageCreateInfo{};
 		vertPipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -477,6 +486,8 @@ private:
 
 		VkFenceCreateInfo fenceCreateInfo{};
 		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &imageAvailableSemaphores[i]);
@@ -486,8 +497,17 @@ private:
 	}
 
 	void drawFrame() {
+		vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			recreateSwapChain();
+			return;
+		}
+		vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
 		vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 		recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
@@ -518,12 +538,49 @@ private:
 		presentInfoKHR.pSwapchains = swapChains;
 		presentInfoKHR.pImageIndices = &imageIndex;
 
-		vkQueuePresentKHR(presentQueue, &presentInfoKHR);
+		result = vkQueuePresentKHR(presentQueue, &presentInfoKHR);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+			framebufferResized = false;
+			recreateSwapChain();
+		}
 
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
-	VkShaderModule createShaderModule(std::vector<char> code, VkDevice device) {
+	void cleanUpSwapChain() {
+		for (VkFramebuffer framebuffer : swapChainFramebuffers)
+		{
+			vkDestroyFramebuffer(device, framebuffer, nullptr);
+		}
+
+		for (VkImageView imageViews: swapChainImageViews)
+		{
+			vkDestroyImageView(device, imageViews, nullptr);
+		}
+		vkDestroySwapchainKHR(device, swapChain, nullptr);
+	}
+
+	void recreateSwapChain() {
+		int width = 0, height = 0;
+		glfwGetFramebufferSize(window, &width, &height);
+
+		while (width > 0 || height > 0) 
+		{
+			glfwGetFramebufferSize(window, &width, &height);
+			glfwWaitEvents();
+		}
+
+		vkDeviceWaitIdle(device);
+
+		cleanUpSwapChain();
+
+		createSwapChain();
+		createImageViews();
+		createFramebuffers();
+	}
+
+	VkShaderModule createShaderModule(std::vector<char> code) {
 		VkShaderModuleCreateInfo shaderModuleCreateInfo{};
 		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		shaderModuleCreateInfo.codeSize = code.size();
